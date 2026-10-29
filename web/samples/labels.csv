@@ -1,0 +1,13 @@
+file,class,tbx11k_file,tb_boxes_xyxy_512px
+healthy_1.png,healthy,h2109.png,
+healthy_2.png,healthy,h0955.png,
+healthy_3.png,healthy,h2472.png,
+healthy_4.png,healthy,h4147.png,
+sick_not_tb_1.png,sick_but_not_tb,s0266.png,
+sick_not_tb_2.png,sick_but_not_tb,s0407.png,
+sick_not_tb_3.png,sick_but_not_tb,s3435.png,
+sick_not_tb_4.png,sick_but_not_tb,s0567.png,
+tb_1.png,tb,tb0564.png,"[[108.5, 151.0, 225.2, 248.1]]"
+tb_2.png,tb,tb0934.png,"[[93.1, 75.1, 183.6, 206.1], [289.8, 91.1, 398.8, 200.6], [70.9, 188.3, 188.3, 287.8], [296.4, 199.7, 427.7, 291.6]]"
+tb_3.png,tb,tb0108.png,"[[89.4, 32.9, 252.1, 189.9], [320.3, 51.7, 428.5, 125.4]]"
+tb_4.png,tb,tb0767.png,"[[306.5, 84.7, 422.4, 228.6], [138.9, 84.0, 266.3, 211.4]]"

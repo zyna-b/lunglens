@@ -1,0 +1,27 @@
+# LungLens
+
+> Chest X-ray TB screening (healthy / sick but not TB / TB) with a heatmap, running in the browser. Deep Learning semester project by Zainab Hamid.
+
+- Live demo: https://lunglens-tb.vercel.app
+- Code, weights, data splits: https://github.com/zyna-b/lunglens
+- Dataset: TBX11K, https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified (CC BY 4.0)
+- Report: https://lunglens-tb.vercel.app/report.pdf
+- Slides: https://lunglens-tb.vercel.app/slides.pdf
+- Video: see project.json
+- LinkedIn: see project.json
+- Machine-readable summary: /project.json ; model card: /model_card.json
+
+## Model
+- Deployed: DenseNet-121 (ImageNet start); input [1, 1, 384, 384] float32 in [0,1] (grayscale, 384x384); outputs: probs [1,3] (softmax over healthy, sick_but_not_tb, tb) and cam [1,3,12,12].
+- Weights: weights/lunglens.onnx (ONNX), weights/lunglens_torchscript.pt (TorchScript), weights/densenet121_imagenet.pt (PyTorch state_dict).
+- Screening rule: refer for a lab test if probs[tb] >= 0.0070 (set at 95% specificity on the validation non-TB X-rays).
+
+## Test results (1,800 held-out X-rays)
+- Accuracy 99.2%, balanced accuracy 98.4%, TB AUC 0.9996, sensitivity 100.0%, specificity 95.9%.
+- Pointing game (heatmap peak inside a radiologist's TB box): 36.0% vs 9.8% for a random point.
+
+## How to test
+git clone https://github.com/zyna-b/lunglens && cd lunglens && pip install -r requirements.txt
+python evaluate.py                         # 12 bundled labelled X-rays
+python evaluate.py --data /path/to/tbx11k  # full test split from data/splits.csv
+python predict.py samples/tb_1.png --heatmaps out/

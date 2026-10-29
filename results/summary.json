@@ -1,0 +1,444 @@
+{
+  "deployed_model": "densenet121_imagenet",
+  "alternative_model": "densenet121_cxr",
+  "models": {
+    "cnn_scratch": {
+      "model": "cnn_scratch",
+      "best_epoch": 35,
+      "epochs": 40,
+      "lr": 0.002,
+      "batch": 32,
+      "image_size": 384,
+      "train_minutes": 17.2,
+      "params_million": 2.35,
+      "screening_rule": "TB probability >= threshold, threshold = 95% specificity on the validation set's non-TB X-rays",
+      "val": {
+        "n": 660,
+        "accuracy": 0.9772727272727273,
+        "balanced_accuracy": 0.9833333333333334,
+        "macro_f1": 0.9545198174639798,
+        "macro_auc": 0.9985370370370371,
+        "per_class": {
+          "healthy": {
+            "precision": 1.0,
+            "recall": 0.98,
+            "f1": 0.98989898989899,
+            "n": 300
+          },
+          "sick_but_not_tb": {
+            "precision": 1.0,
+            "recall": 0.97,
+            "f1": 0.9847715736040609,
+            "n": 300
+          },
+          "tb": {
+            "precision": 0.8,
+            "recall": 1.0,
+            "f1": 0.8888888888888888,
+            "n": 60
+          }
+        },
+        "confusion_matrix": [
+          [
+            294,
+            0,
+            6
+          ],
+          [
+            0,
+            291,
+            9
+          ],
+          [
+            0,
+            0,
+            60
+          ]
+        ],
+        "tb_vs_rest": {
+          "auc": 0.9985833333333333,
+          "threshold": 0.23230867087841034,
+          "sensitivity": 1.0,
+          "specificity": 0.95,
+          "tp": 60,
+          "fn": 0,
+          "tn": 570,
+          "fp": 30
+        }
+      },
+      "test": {
+        "n": 1800,
+        "accuracy": 0.9694444444444444,
+        "balanced_accuracy": 0.9695833333333334,
+        "macro_f1": 0.9483017670293336,
+        "macro_auc": 0.9968991666666667,
+        "per_class": {
+          "healthy": {
+            "precision": 1.0,
+            "recall": 0.99,
+            "f1": 0.9949748743718593,
+            "n": 800
+          },
+          "sick_but_not_tb": {
+            "precision": 0.98828125,
+            "recall": 0.94875,
+            "f1": 0.9681122448979592,
+            "n": 800
+          },
+          "tb": {
+            "precision": 0.8083333333333333,
+            "recall": 0.97,
+            "f1": 0.8818181818181818,
+            "n": 200
+          }
+        },
+        "confusion_matrix": [
+          [
+            792,
+            3,
+            5
+          ],
+          [
+            0,
+            759,
+            41
+          ],
+          [
+            0,
+            6,
+            194
+          ]
+        ],
+        "tb_vs_rest": {
+          "auc": 0.9951875,
+          "threshold": 0.23230867087841034,
+          "sensitivity": 0.98,
+          "specificity": 0.945625,
+          "tp": 196,
+          "fn": 4,
+          "tn": 1513,
+          "fp": 87
+        },
+        "accuracy_95ci": [
+          0.9611111111111111,
+          0.9772222222222222
+        ],
+        "tb_auc_95ci": [
+          0.9921295593105658,
+          0.99788440917554
+        ]
+      },
+      "test_at_val_90_sensitivity": {
+        "auc": 0.9951875,
+        "threshold": 0.9673973321914673,
+        "sensitivity": 0.84,
+        "specificity": 0.996875,
+        "tp": 168,
+        "fn": 32,
+        "tn": 1595,
+        "fp": 5
+      },
+      "pointing_game": {
+        "n": 200,
+        "hit_rate": 0.34,
+        "energy_in_boxes": 0.16204119439381884,
+        "random_hit_rate": 0.09778478622436523
+      },
+      "onnx_cpu_ms": 246.4,
+      "onnx_max_abs_err": 1.33514404296875e-05,
+      "onnx_mb": 9.4
+    },
+    "densenet121_imagenet": {
+      "model": "densenet121_imagenet",
+      "best_epoch": 13,
+      "epochs": 20,
+      "lr": 0.0003,
+      "batch": 32,
+      "image_size": 384,
+      "train_minutes": 17.1,
+      "params_million": 6.96,
+      "screening_rule": "TB probability >= threshold, threshold = 95% specificity on the validation set's non-TB X-rays",
+      "val": {
+        "n": 660,
+        "accuracy": 0.9924242424242424,
+        "balanced_accuracy": 0.9944444444444445,
+        "macro_f1": 0.987972676361065,
+        "macro_auc": 0.9996358024691357,
+        "per_class": {
+          "healthy": {
+            "precision": 1.0,
+            "recall": 0.9933333333333333,
+            "f1": 0.9966555183946488,
+            "n": 300
+          },
+          "sick_but_not_tb": {
+            "precision": 0.9933110367892977,
+            "recall": 0.99,
+            "f1": 0.991652754590985,
+            "n": 300
+          },
+          "tb": {
+            "precision": 0.9523809523809523,
+            "recall": 1.0,
+            "f1": 0.975609756097561,
+            "n": 60
+          }
+        },
+        "confusion_matrix": [
+          [
+            298,
+            2,
+            0
+          ],
+          [
+            0,
+            297,
+            3
+          ],
+          [
+            0,
+            0,
+            60
+          ]
+        ],
+        "tb_vs_rest": {
+          "auc": 0.9994722222222222,
+          "threshold": 0.006956807337701321,
+          "sensitivity": 1.0,
+          "specificity": 0.95,
+          "tp": 60,
+          "fn": 0,
+          "tn": 570,
+          "fp": 30
+        }
+      },
+      "test": {
+        "n": 1800,
+        "accuracy": 0.9922222222222222,
+        "balanced_accuracy": 0.9841666666666667,
+        "macro_f1": 0.9871886935176417,
+        "macro_auc": 0.9991885416666667,
+        "per_class": {
+          "healthy": {
+            "precision": 1.0,
+            "recall": 0.995,
+            "f1": 0.9974937343358395,
+            "n": 800
+          },
+          "sick_but_not_tb": {
+            "precision": 0.9864029666254636,
+            "recall": 0.9975,
+            "f1": 0.9919204474829086,
+            "n": 800
+          },
+          "tb": {
+            "precision": 0.9846153846153847,
+            "recall": 0.96,
+            "f1": 0.9721518987341772,
+            "n": 200
+          }
+        },
+        "confusion_matrix": [
+          [
+            796,
+            3,
+            1
+          ],
+          [
+            0,
+            798,
+            2
+          ],
+          [
+            0,
+            8,
+            192
+          ]
+        ],
+        "tb_vs_rest": {
+          "auc": 0.9995875,
+          "threshold": 0.006956807337701321,
+          "sensitivity": 1.0,
+          "specificity": 0.959375,
+          "tp": 200,
+          "fn": 0,
+          "tn": 1535,
+          "fp": 65
+        },
+        "accuracy_95ci": [
+          0.9883194444444444,
+          0.9961111111111111
+        ],
+        "tb_auc_95ci": [
+          0.9991412505778754,
+          0.9998908717480781
+        ]
+      },
+      "test_at_val_90_sensitivity": {
+        "auc": 0.9995875,
+        "threshold": 0.9640668630599976,
+        "sensitivity": 0.85,
+        "specificity": 1.0,
+        "tp": 170,
+        "fn": 30,
+        "tn": 1600,
+        "fp": 0
+      },
+      "pointing_game": {
+        "n": 200,
+        "hit_rate": 0.36,
+        "energy_in_boxes": 0.16693610089627328,
+        "random_hit_rate": 0.09778478622436523
+      },
+      "onnx_cpu_ms": 313.4,
+      "onnx_max_abs_err": 8.58306884765625e-06,
+      "onnx_mb": 28.2
+    },
+    "densenet121_cxr": {
+      "model": "densenet121_cxr",
+      "best_epoch": 16,
+      "epochs": 20,
+      "lr": 0.0003,
+      "batch": 32,
+      "image_size": 384,
+      "train_minutes": 17.1,
+      "params_million": 6.95,
+      "screening_rule": "TB probability >= threshold, threshold = 95% specificity on the validation set's non-TB X-rays",
+      "val": {
+        "n": 660,
+        "accuracy": 0.9878787878787879,
+        "balanced_accuracy": 0.991111111111111,
+        "macro_f1": 0.9785378839945515,
+        "macro_auc": 0.9996882716049383,
+        "per_class": {
+          "healthy": {
+            "precision": 1.0,
+            "recall": 0.9933333333333333,
+            "f1": 0.9966555183946488,
+            "n": 300
+          },
+          "sick_but_not_tb": {
+            "precision": 0.9932432432432432,
+            "recall": 0.98,
+            "f1": 0.9865771812080537,
+            "n": 300
+          },
+          "tb": {
+            "precision": 0.9090909090909091,
+            "recall": 1.0,
+            "f1": 0.9523809523809523,
+            "n": 60
+          }
+        },
+        "confusion_matrix": [
+          [
+            298,
+            2,
+            0
+          ],
+          [
+            0,
+            294,
+            6
+          ],
+          [
+            0,
+            0,
+            60
+          ]
+        ],
+        "tb_vs_rest": {
+          "auc": 0.99975,
+          "threshold": 0.05128456652164459,
+          "sensitivity": 1.0,
+          "specificity": 0.95,
+          "tp": 60,
+          "fn": 0,
+          "tn": 570,
+          "fp": 30
+        }
+      },
+      "test": {
+        "n": 1800,
+        "accuracy": 0.9833333333333333,
+        "balanced_accuracy": 0.9700000000000001,
+        "macro_f1": 0.9723235656970468,
+        "macro_auc": 0.9974968750000001,
+        "per_class": {
+          "healthy": {
+            "precision": 0.9974842767295597,
+            "recall": 0.99125,
+            "f1": 0.9943573667711598,
+            "n": 800
+          },
+          "sick_but_not_tb": {
+            "precision": 0.9777503090234858,
+            "recall": 0.98875,
+            "f1": 0.983219390926041,
+            "n": 800
+          },
+          "tb": {
+            "precision": 0.9489795918367347,
+            "recall": 0.93,
+            "f1": 0.9393939393939394,
+            "n": 200
+          }
+        },
+        "confusion_matrix": [
+          [
+            793,
+            6,
+            1
+          ],
+          [
+            0,
+            791,
+            9
+          ],
+          [
+            2,
+            12,
+            186
+          ]
+        ],
+        "tb_vs_rest": {
+          "auc": 0.996484375,
+          "threshold": 0.05128456652164459,
+          "sensitivity": 0.98,
+          "specificity": 0.9575,
+          "tp": 196,
+          "fn": 4,
+          "tn": 1532,
+          "fp": 68
+        },
+        "accuracy_95ci": [
+          0.9772222222222222,
+          0.9888888888888889
+        ],
+        "tb_auc_95ci": [
+          0.9936216583730709,
+          0.9984195918167823
+        ]
+      },
+      "test_at_val_90_sensitivity": {
+        "auc": 0.996484375,
+        "threshold": 0.9472375512123108,
+        "sensitivity": 0.835,
+        "specificity": 0.998125,
+        "tp": 167,
+        "fn": 33,
+        "tn": 1597,
+        "fp": 3
+      },
+      "pointing_game": {
+        "n": 200,
+        "hit_rate": 0.575,
+        "energy_in_boxes": 0.23746943722610922,
+        "random_hit_rate": 0.09778478622436523
+      },
+      "onnx_cpu_ms": 294.5,
+      "onnx_max_abs_err": 3.814697265625e-05,
+      "onnx_mb": 28.2
+    }
+  }
+}

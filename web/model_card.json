@@ -1,0 +1,97 @@
+{
+  "name": "LungLens",
+  "task": "chest X-ray screening for tuberculosis (3 classes)",
+  "classes": [
+    "healthy",
+    "sick_but_not_tb",
+    "tb"
+  ],
+  "input": {
+    "name": "xray",
+    "shape": [
+      1,
+      1,
+      384,
+      384
+    ],
+    "dtype": "float32",
+    "range": [
+      0,
+      1
+    ],
+    "preprocessing": "grayscale, resize to 384x384 bilinear, divide by 255; normalisation is inside the model"
+  },
+  "outputs": {
+    "probs": "softmax over classes, shape [1, 3]",
+    "cam": "class activation maps, shape [1, 3, 12, 12]"
+  },
+  "screening": {
+    "rule": "refer for a lab test if probs[tb] >= threshold",
+    "threshold": 0.006956807337701321,
+    "threshold_chosen_on": "validation set: 95% specificity on the non-TB X-rays"
+  },
+  "deployed_model": "densenet121_imagenet",
+  "architecture": "DenseNet-121 (ImageNet start)",
+  "alternative_model": {
+    "model": "densenet121_cxr",
+    "architecture": "DenseNet-121 (chest X-ray start)",
+    "file": "weights/lunglens_alt.onnx",
+    "threshold": 0.05128456652164459,
+    "pointing_game_hit_rate": 0.575,
+    "test_balanced_accuracy": 0.9700000000000001,
+    "why": "same architecture, other starting weights; shown on the website to compare heatmaps"
+  },
+  "test_metrics": {
+    "n": 1800,
+    "accuracy": 0.9922222222222222,
+    "balanced_accuracy": 0.9841666666666667,
+    "macro_f1": 0.9871886935176417,
+    "macro_auc": 0.9991885416666667,
+    "accuracy_95ci": [
+      0.9883194444444444,
+      0.9961111111111111
+    ],
+    "tb_auc_95ci": [
+      0.9991412505778754,
+      0.9998908717480781
+    ],
+    "tb_auc": 0.9995875,
+    "sensitivity": 1.0,
+    "specificity": 0.959375,
+    "pointing_game_hit_rate": 0.36
+  },
+  "dataset": {
+    "name": "TBX11K (simplified)",
+    "url": "https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified",
+    "license": "CC BY 4.0",
+    "paper": "Liu et al., Rethinking Computer-aided Tuberculosis Diagnosis, CVPR 2020",
+    "splits": "data/splits.csv"
+  },
+  "files": {
+    "cnn_scratch.pt": {
+      "bytes": 9443677,
+      "sha256": "510f0bdb6da9464fb7afe607d54746b4654422898916075936281ff7c049f185"
+    },
+    "densenet121_cxr.pt": {
+      "bytes": 28330682,
+      "sha256": "1b7358c9361a91666afca7973def1e9d5e0449346c2cadd2fc494e331e2b84ad"
+    },
+    "densenet121_imagenet.pt": {
+      "bytes": 28356400,
+      "sha256": "d9b97080e3f3b9d3eb360601470df5a10d4c2d81f4b3e101db06c462b5d52ea5"
+    },
+    "lunglens.onnx": {
+      "bytes": 28225785,
+      "sha256": "dff217e8e30121788e897ec09621c86183fab46d30010b0ac180f9d2a19b224f"
+    },
+    "lunglens_alt.onnx": {
+      "bytes": 28200303,
+      "sha256": "08ec4604e953f198507716f76ee32f649e1d8b2a43a5a6487eb24f8e096b1f71"
+    },
+    "lunglens_torchscript.pt": {
+      "bytes": 29069001,
+      "sha256": "2e6dc89fade7eea93d03ae797af05c0099e168458e620efd86da3aa6e79f4949"
+    }
+  },
+  "intended_use": "research and teaching demo of TB screening; not a medical device"
+}

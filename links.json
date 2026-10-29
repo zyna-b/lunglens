@@ -1,0 +1,16 @@
+{
+  "author": "Zainab Hamid",
+  "month": "November 2026",
+  "github": "https://github.com/zyna-b/lunglens",
+  "dataset": "https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified",
+  "weights_onnx": "https://github.com/zyna-b/lunglens/raw/main/weights/lunglens.onnx",
+  "weights_torchscript": "https://github.com/zyna-b/lunglens/raw/main/weights/lunglens_torchscript.pt",
+  "weights_pt": "https://github.com/zyna-b/lunglens/tree/main/weights",
+  "notebook": "https://github.com/zyna-b/lunglens/blob/main/notebooks/LungLens_train.ipynb",
+  "model_card": "model_card.json",
+  "report": "https://lunglens-tb.vercel.app/report.pdf",
+  "slides": "https://lunglens-tb.vercel.app/slides.pdf",
+  "youtube": "",
+  "linkedin": "",
+  "site": "https://lunglens-tb.vercel.app"
+}

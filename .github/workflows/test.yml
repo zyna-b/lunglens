@@ -1,0 +1,26 @@
+name: test
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install numpy pillow onnxruntime
+      - name: Predict on bundled X-rays
+        run: python predict.py samples/*.png --heatmaps heatmaps/
+      - name: Evaluate on the 12 labelled samples
+        run: |
+          python evaluate.py
+          python -c "import json; e=json.load(open('evaluation.json')); assert e['accuracy'] >= 0.75, e"
+      - name: Check weight files against model_card.json
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          card = json.load(open("model_card.json"))
+          for f, meta in card["files"].items():
+              h = hashlib.sha256(open(f"weights/{f}", "rb").read()).hexdigest()
+              assert h == meta["sha256"], f
+              print("ok", f)
+          PY

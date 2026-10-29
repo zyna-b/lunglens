@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+outputs/
+data_raw/
+*.zip
+evaluation.json
+.vercel
+docs/slides/_html/
+docs/slides/audio/
+docs/slides/png/

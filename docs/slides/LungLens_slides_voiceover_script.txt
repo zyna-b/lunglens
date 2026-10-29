@@ -1,0 +1,32 @@
+Slide 1
+Assalam o alaikum. I'm Zainab Hamid. This is LungLens: a deep learning model that screens chest X-rays for tuberculosis, right in the browser, and shows where it looked.
+
+Slide 2
+Pakistan had around six hundred and seventy thousand TB cases in 2024, the fifth highest in the world. X-rays are cheap and available almost everywhere, but people trained to read them for TB are scarce. Since 2021, the WHO has accepted software as the X-ray reader for TB screening.
+
+Slide 3
+Most student TB projects use a Kaggle dataset where the TB and normal X-rays come from different hospitals, so a model can learn which hospital an image came from instead of which disease it shows. I used TBX11K instead, which also includes patients who are sick but don't have TB. That's the real question: TB, or some other lung disease?
+
+Slide 4
+TBX11K has eight thousand four hundred labelled X-rays, and radiologists drew boxes around every TB lesion. I kept eighteen hundred X-rays completely untouched for the final test. TB is rare in the training set, so the loss weights it about five times more. And I never flip X-rays left to right: that would put the heart on the wrong side.
+
+Slide 5
+I trained three models with identical data and settings. A small CNN from scratch as the baseline, and two DenseNet-121 networks that differ only in their starting weights: one starts from ImageNet photos, the other from chest X-rays. That isolates one question: does it help to start from a model that has already seen lungs?
+
+Slide 6
+On eighteen hundred X-rays it had never seen, the deployed model, DenseNet-121 starting from ImageNet, is 99.2% accurate across three classes, with a TB AUC of 0.9996. The two DenseNets are close: DenseNet-121 starting from ImageNet did better on balanced accuracy, 98.4% against 97.0%, and their TB AUC confidence intervals do not overlap. Training from scratch gives 97.0% balanced accuracy, close to the pretrained models on this dataset.
+
+Slide 7
+Accuracy isn't enough for a medical tool, so I checked where each model looks. Radiologists boxed every TB lesion, and I measured how often the hottest point of the heatmap lands inside a box. DenseNet-121 starting from chest X-rays: 57%, DenseNet-121 starting from ImageNet: 36%, against 10% for a random point. So the model that has already seen chest X-rays looks in the right place far more often, even though it is slightly less accurate. The website lets you switch between the two and compare.
+
+Slide 8
+I also learned a lesson about thresholds. My first rule picked the threshold that caught ninety percent of the sixty TB cases in validation. On the test set it caught only 85.0%. Sixty cases are too few to estimate that reliably. So I set the threshold from the six hundred non-TB X-rays instead, at ninety-five percent specificity. Now it catches 100.0% of TB cases, with 95.9% specificity, well above the WHO minimum of ninety and seventy.
+
+Slide 9
+Here's the website. I upload an X-ray or tap one of the test samples, and about a second later it gives the screening result, the three probabilities, and the heatmap, with the doctors' boxes on top for comparison. The model runs on my laptop; the X-ray never leaves it.
+
+Slide 10
+Its limits: TBX11K comes from Chinese hospitals, so it still needs testing on X-rays from Pakistani hospitals. It's for adults, and it's a screening aid, not a diagnosis. Next steps: Pakistani data, a threshold set for that population, and lung segmentation.
+
+Slide 11
+The website, code, weights, data splits, notebook and report are all public and linked. Thank you, Dr. Munir Ahmad, and thank you for watching.

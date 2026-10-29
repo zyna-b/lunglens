@@ -1,0 +1,117 @@
+{
+  "project": "LungLens",
+  "task": "chest X-ray screening for tuberculosis (3 classes)",
+  "author": "Zainab Hamid",
+  "course": "Deep Learning, Superior University (Dr. Munir Ahmad)",
+  "links": {
+    "github": "https://github.com/zyna-b/lunglens",
+    "dataset": "https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified",
+    "weights_onnx": "https://github.com/zyna-b/lunglens/raw/main/weights/lunglens.onnx",
+    "weights_torchscript": "https://github.com/zyna-b/lunglens/raw/main/weights/lunglens_torchscript.pt",
+    "weights_pt": "https://github.com/zyna-b/lunglens/tree/main/weights",
+    "notebook": "https://github.com/zyna-b/lunglens/blob/main/notebooks/LungLens_train.ipynb",
+    "report": "https://lunglens-tb.vercel.app/report.pdf",
+    "slides": "https://lunglens-tb.vercel.app/slides.pdf",
+    "model_card": "model_card.json",
+    "site": "https://lunglens-tb.vercel.app"
+  },
+  "dataset": {
+    "name": "TBX11K (simplified)",
+    "url": "https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified",
+    "license": "CC BY 4.0",
+    "paper": "Liu et al., Rethinking Computer-aided Tuberculosis Diagnosis, CVPR 2020",
+    "splits": "data/splits.csv"
+  },
+  "classes": [
+    "healthy",
+    "sick_but_not_tb",
+    "tb"
+  ],
+  "input": {
+    "name": "xray",
+    "shape": [
+      1,
+      1,
+      384,
+      384
+    ],
+    "dtype": "float32",
+    "range": [
+      0,
+      1
+    ],
+    "preprocessing": "grayscale, resize to 384x384 bilinear, divide by 255; normalisation is inside the model"
+  },
+  "outputs": {
+    "probs": "softmax over classes, shape [1, 3]",
+    "cam": "class activation maps, shape [1, 3, 12, 12]"
+  },
+  "screening": {
+    "rule": "refer for a lab test if probs[tb] >= threshold",
+    "threshold": 0.006956807337701321,
+    "threshold_chosen_on": "validation set: 95% specificity on the non-TB X-rays"
+  },
+  "deployed_model": "densenet121_imagenet",
+  "test_metrics": {
+    "n": 1800,
+    "accuracy": 0.9922222222222222,
+    "balanced_accuracy": 0.9841666666666667,
+    "macro_f1": 0.9871886935176417,
+    "macro_auc": 0.9991885416666667,
+    "accuracy_95ci": [
+      0.9883194444444444,
+      0.9961111111111111
+    ],
+    "tb_auc_95ci": [
+      0.9991412505778754,
+      0.9998908717480781
+    ],
+    "tb_auc": 0.9995875,
+    "sensitivity": 1.0,
+    "specificity": 0.959375,
+    "pointing_game_hit_rate": 0.36
+  },
+  "all_models": {
+    "cnn_scratch": {
+      "test_accuracy": 0.9694444444444444,
+      "balanced_accuracy": 0.9695833333333334,
+      "tb_auc": 0.9951875,
+      "sensitivity": 0.98,
+      "specificity": 0.945625,
+      "pointing_game": 0.34,
+      "params_million": 2.35
+    },
+    "densenet121_imagenet": {
+      "test_accuracy": 0.9922222222222222,
+      "balanced_accuracy": 0.9841666666666667,
+      "tb_auc": 0.9995875,
+      "sensitivity": 1.0,
+      "specificity": 0.959375,
+      "pointing_game": 0.36,
+      "params_million": 6.96
+    },
+    "densenet121_cxr": {
+      "test_accuracy": 0.9833333333333333,
+      "balanced_accuracy": 0.9700000000000001,
+      "tb_auc": 0.996484375,
+      "sensitivity": 0.98,
+      "specificity": 0.9575,
+      "pointing_game": 0.575,
+      "params_million": 6.95
+    }
+  },
+  "how_to_test": [
+    "git clone https://github.com/zyna-b/lunglens",
+    "pip install -r requirements.txt",
+    "python evaluate.py",
+    "python predict.py samples/tb_1.png"
+  ],
+  "weights_files": {
+    "cnn_scratch.pt": "https://github.com/zyna-b/lunglens/raw/main/weights/cnn_scratch.pt",
+    "densenet121_cxr.pt": "https://github.com/zyna-b/lunglens/raw/main/weights/densenet121_cxr.pt",
+    "densenet121_imagenet.pt": "https://github.com/zyna-b/lunglens/raw/main/weights/densenet121_imagenet.pt",
+    "lunglens.onnx": "https://github.com/zyna-b/lunglens/raw/main/weights/lunglens.onnx",
+    "lunglens_alt.onnx": "https://github.com/zyna-b/lunglens/raw/main/weights/lunglens_alt.onnx",
+    "lunglens_torchscript.pt": "https://github.com/zyna-b/lunglens/raw/main/weights/lunglens_torchscript.pt"
+  }
+}

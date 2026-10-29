@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LungLens: TB screening from chest X-rays</title>
+<meta name="description" content="LungLens screens chest X-rays for tuberculosis in the browser: healthy, sick but not TB, or TB, with a heatmap of where the model looked. Deep learning semester project, TBX11K dataset.">
+<meta property="og:title" content="LungLens: TB screening from chest X-rays">
+<meta property="og:description" content="Upload a chest X-ray; a DenseNet-121 running in your browser flags possible TB and shows where it looked.">
+<meta property="og:image" content="figures/heatmaps_vs_boxes.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/json" href="project.json" title="Machine-readable project summary">
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareSourceCode", "name": "LungLens", "description": "TB screening from chest X-rays with deep learning (TBX11K, DenseNet-121, in-browser ONNX).", "codeRepository": "https://github.com/zyna-b/lunglens", "programmingLanguage": ["Python", "JavaScript"], "author": {"@type": "Person", "name": "Zainab Hamid"}, "license": "https://opensource.org/licenses/MIT"}</script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0b7a83"/><path d="M16 6v20M16 12c-3 0-8 1-8 8 0 3 2 5 4 5s4-2 4-6M16 12c3 0 8 1 8 8 0 3-2 5-4 5s-4-2-4-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>LungLens</a>
+  <nav><a href="#demo">Demo</a><a href="#problem">Problem</a><a href="#dataset">Dataset</a><a href="#model">Model</a><a href="#results">Results</a><a href="#links">Links</a></nav>
+</div></header>
+
+<main>
+<div class="wrap hero">
+  <div class="pills"><span class="pill">Deep Learning semester project</span><span class="pill">TBX11K · 8,399 X-rays</span><span class="pill">Runs in your browser</span></div>
+  <h1>Screen a chest X-ray for TB in about a second.</h1>
+  <p class="lead">LungLens sorts a chest X-ray into <b>healthy</b>, <b>sick but not TB</b>, or <b>TB</b>, and shows where in the lungs it looked. The model runs on your device, so the X-ray is never uploaded anywhere.</p>
+  <a class="btn primary" href="#demo" id="try-sample">Try a sample X-ray</a>
+  <a class="btn" href="https://github.com/zyna-b/lunglens">Code &amp; weights on GitHub</a>
+</div>
+
+<section id="demo"><div class="wrap">
+  <h2>Try it</h2>
+  <p class="sub">Upload a frontal chest X-ray (PNG or JPG), or tap one of the 12 test X-rays below. Each sample shows its true label; the green boxes on TB samples were drawn by doctors.</p>
+  <div class="demo">
+    <div class="card">
+      <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload a chest X-ray">
+        <b>Drop an X-ray here</b> or click to choose a file
+        <input type="file" id="file" accept="image/*" hidden>
+      </div>
+      <div class="viewer" aria-live="polite">
+        <div class="empty" id="empty">No X-ray yet</div>
+        <canvas id="xray"></canvas><canvas id="heat"></canvas><canvas id="boxes"></canvas>
+      </div>
+      <div class="toggles">
+        <label><input type="checkbox" id="show-heat" checked> TB heatmap</label>
+        <label>opacity <input type="range" id="opacity" min="0" max="0.9" step="0.05" value="0.45"></label>
+        <label id="box-toggle" hidden><input type="checkbox" id="show-boxes" checked> doctors' TB boxes</label>
+      </div>
+      <div class="model-switch" id="model-switch" hidden role="group" aria-label="Choose model">
+        <span>Model:</span><button type="button" id="m-main" data-which="main" aria-pressed="true"></button><button type="button" id="m-alt" data-which="alt" aria-pressed="false"></button>
+        <small>Same network, different starting weights. Compare where each one looks.</small>
+      </div>
+      <div class="gallery" id="gallery" aria-label="Sample X-rays from the test set"></div>
+    </div>
+    <div class="card" aria-live="polite">
+      <div class="verdict idle" id="verdict">Waiting for an X-ray<small>Upload one, or tap a sample.</small></div>
+      <p class="meta" id="status" aria-live="polite">Loading…</p>
+      <div id="bars"></div>
+      <p class="meta" id="truth"></p>
+      <p class="meta">Model: <span id="which">DenseNet-121 (ImageNet start)</span> · state: <span id="run-state">loading</span> · screening threshold 0.7% for the deployed model (95% specificity on validation X-rays).</p>
+      <p class="notice">Research and teaching demo, not a medical device. A flagged X-ray needs a lab test; a clear one does not rule TB out. Not for children under 15.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="problem"><div class="wrap">
+  <h2>The problem</h2>
+  <p class="sub">Pakistan has one of the world's largest TB burdens, and many cases are never diagnosed. Chest X-rays are cheap and available almost everywhere; people trained to read them for TB are not.</p>
+  <div class="stats">
+    <div class="card stat"><div class="num">~670,000</div><div class="lbl">TB cases in Pakistan in 2024 (WHO Global TB Report 2025)</div></div>
+    <div class="card stat"><div class="num">5th</div><div class="lbl">highest TB burden in the world: 6.3% of all cases</div></div>
+    <div class="card stat"><div class="num">2021</div><div class="lbl">WHO first recommended computer-aided detection (CAD) software in place of a human reader for TB screening, age 15+</div></div>
+    <div class="card stat"><div class="num">3 classes</div><div class="lbl">because the hard part is telling TB from <i>other</i> lung disease, not from a healthy chest</div></div>
+  </div>
+  <div class="two" style="margin-top:20px">
+    <div class="card"><b>What LungLens does</b>
+      <ul class="clean">
+        <li>X-ray in → probabilities for healthy, sick-but-not-TB and TB, plus a heatmap.</li>
+        <li>Screening rule: <b>refer for a lab test if TB probability ≥ 0.7%</b>. The threshold is fixed on validation data at 95% specificity; on the test set that catches 100.0% of TB cases, above WHO's 90% minimum for a triage test.</li>
+        <li>Runs entirely in the browser (ONNX Runtime Web): works offline once loaded, costs nothing to serve, uploads nothing.</li>
+      </ul></div>
+    <div class="card"><b>Why it is not a toy</b>
+      <ul class="clean">
+        <li>Most student TB projects use a dataset where TB and normal X-rays come from different hospitals, so a model can learn "which hospital" instead of "which disease".</li>
+        <li>TBX11K's classes share sources, and its "sick but not TB" class forces the model to separate TB from pneumonia-like disease.</li>
+        <li>We test where the model looks against boxes doctors drew around TB: the <b>pointing game</b>.</li>
+      </ul></div>
+  </div>
+</div></section>
+
+<section id="dataset"><div class="wrap">
+  <h2>Dataset: TBX11K</h2>
+  <p class="sub">Liu et al., <i>Rethinking Computer-aided Tuberculosis Diagnosis</i>, CVPR 2020. Simplified Kaggle release, licence CC BY 4.0. 512×512 chest X-rays with TB areas boxed by radiologists.</p>
+  <div class="two">
+    <div class="card table-wrap"><table>
+      <tr><th>Split</th><th>Healthy</th><th>Sick, not TB</th><th>TB</th><th>Total</th></tr>
+      <tr><td>Train (90% of TBX11K train)</td><td>2,700</td><td>2,700</td><td>539</td><td>5,939</td></tr>
+      <tr><td>Validation (10%, stratified, seed 42)</td><td>300</td><td>300</td><td>60</td><td>660</td></tr>
+      <tr><td><b>Test</b> (TBX11K's labelled validation set)</td><td>800</td><td>800</td><td>200</td><td><b>1,800</b></td></tr>
+    </table>
+    <p class="meta">TBX11K's own test-set labels are not public, so its labelled validation set is our untouched test set. Exact file lists: <a href="https://github.com/zyna-b/lunglens/blob/main/data/splits.csv">data/splits.csv</a>.</p></div>
+    <div class="card"><b>Handling the data</b>
+      <ul class="clean">
+        <li>Grayscale, resized to 384×384 (TB lesions are small; 224 px loses them).</li>
+        <li>TB is 9% of the training set: the loss weights TB about 5× more.</li>
+        <li>Augmentation on the GPU: small rotations, shifts, zooms, exposure/contrast/gamma changes, noise, blur.</li>
+        <li><b>No horizontal flips</b>: a flipped X-ray puts the heart on the wrong side, which never happens in real life.</li>
+      </ul>
+      <p><a class="btn" href="https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified">Dataset on Kaggle</a></p></div>
+  </div>
+</div></section>
+
+<section id="model"><div class="wrap">
+  <h2>Models: one question at a time</h2>
+  <p class="sub">Three models, trained with identical data, augmentation, loss and schedule. The two DenseNets differ <i>only</i> in their starting weights, which isolates one question: does it help to start from a network that has already seen chest X-rays?</p>
+  <div class="card table-wrap"><table>
+    <tr><th>Model</th><th>Start</th><th>Why it is here</th></tr>
+    <tr><td>CNN from scratch</td><td>random weights</td><td>Baseline: 5 conv blocks (2.4M params). What deep learning does with no prior knowledge.</td></tr>
+    <tr><td>DenseNet-121</td><td>ImageNet (photos of objects)</td><td>Standard transfer learning; same architecture as Stanford's CheXNet.</td></tr>
+    <tr><td>DenseNet-121</td><td>chest X-rays from 7 public datasets: NIH, CheXpert, MIMIC-CXR, PadChest and more (TorchXRayVision)</td><td>Domain-specific pretraining: has it learned what lungs look like?</td></tr>
+  </table></div>
+  <div class="two" style="margin-top:20px">
+    <div class="card"><b>Training</b>
+      <ul class="clean"><li>AdamW, weight decay 0.05, cosine schedule with warm-up; 20 epochs (DenseNets), 40 (scratch).</li>
+      <li>Batch 32, mixed precision, one NVIDIA L4 GPU on Google Colab.</li>
+      <li>Best epoch chosen by validation balanced accuracy; test set never used for any choice.</li></ul></div>
+    <div class="card"><b>Heatmaps without gradients</b>
+      <ul class="clean"><li>Every model ends in global average pooling + one linear layer, so the class activation map (CAM, Zhou et al. 2016) comes out of the same forward pass.</li>
+      <li>That is why the browser can draw the heatmap: the ONNX model returns probabilities <i>and</i> maps.</li></ul></div>
+  </div>
+</div></section>
+
+<section id="results"><div class="wrap">
+  <h2>Results on 1,800 test X-rays</h2>
+  <p class="sub">The deployed model is <b>DenseNet-121 (ImageNet start)</b>, chosen on validation data. On the 1,800 untouched test X-rays it is 99.2% accurate across the three classes and separates TB from everything else with an AUC of 0.9996. At the screening threshold it catches 100.0% of TB cases (200 of 200). Starting from chest X-rays instead of ImageNet changed TB AUC by -0.0031 and balanced accuracy by -1.4 points.</p>
+  <div class="stats">
+    <div class="card stat"><div class="num">99.2%</div><div class="lbl">3-class accuracy (95% CI 98.8%–99.6%)</div></div>
+    <div class="card stat"><div class="num">0.9996</div><div class="lbl">TB vs not-TB AUC (95% CI 0.9991–0.9999)</div></div>
+    <div class="card stat"><div class="num">100.0%</div><div class="lbl">TB sensitivity at the screening threshold (95.9% specificity)</div></div>
+    <div class="card stat"><div class="num">36%</div><div class="lbl">of TB X-rays: the heatmap's hottest point is inside a doctor's box (a random point: 10%)</div></div>
+  </div>
+  <div class="card table-wrap" style="margin-top:20px"><table>
+    <tr><th>Model</th><th>Params</th><th>Accuracy</th><th>Balanced acc.</th><th>TB AUC</th><th>Sensitivity</th><th>Specificity</th><th>Pointing game</th><th>CPU ms</th></tr>
+    <tr><td>CNN from scratch</td><td>2.35M</td><td>96.9%</td><td>97.0%</td><td>0.9952</td><td>98.0%</td><td>94.6%</td><td>34%</td><td>246</td></tr>
+    <tr class=deployed><td>DenseNet-121 (ImageNet start) <b>(deployed)</b></td><td>6.96M</td><td>99.2%</td><td>98.4%</td><td>0.9996</td><td>100.0%</td><td>95.9%</td><td>36%</td><td>313</td></tr>
+    <tr><td>DenseNet-121 (chest X-ray start)</td><td>6.95M</td><td>98.3%</td><td>97.0%</td><td>0.9965</td><td>98.0%</td><td>95.8%</td><td>57%</td><td>294</td></tr>
+  </table></div>
+  <div class="figs" style="margin-top:20px">
+    <figure class="wide"><img src="figures/heatmaps_vs_boxes.png" alt="Heatmaps of the deployed model on TB test X-rays, with doctors' TB boxes in green" loading="lazy"><figcaption>Where the deployed model looked (heatmap) vs where doctors marked TB (green boxes), on test X-rays it called TB.</figcaption></figure>
+    <figure><img src="figures/roc_tb.png" alt="ROC curves for TB vs not-TB, three models" loading="lazy"><figcaption>TB vs not-TB ROC; dots are the operating points at each model's screening threshold.</figcaption></figure>
+    <figure><img src="figures/confusion_matrix.png" alt="Confusion matrix of the deployed model" loading="lazy"><figcaption>Confusion matrix, deployed model, 1,800 test X-rays.</figcaption></figure>
+    <figure><img src="figures/pointing_game.png" alt="Pointing game hit rate by model" loading="lazy"><figcaption>Pointing game: does the heatmap's hottest point land in a doctor's TB box?</figcaption></figure>
+    <figure><img src="figures/training_curves.png" alt="Training loss and validation balanced accuracy by epoch" loading="lazy"><figcaption>Training loss and validation balanced accuracy per epoch.</figcaption></figure>
+  </div>
+  <div class="two" style="margin-top:20px">
+    <div class="card"><b>Honest limits</b>
+      <ul class="clean"><li>TBX11K comes from Chinese hospitals; the model has not been tested on X-rays from Pakistani hospitals.</li><li>Trained on adults; WHO's CAD recommendation is for people aged 15 and over.</li><li>The screening threshold was set on validation X-rays from the same hospitals; a new population needs its own threshold (our first rule, set on only 60 validation TB X-rays, did not transfer to the test set).</li><li>A heatmap shows where the evidence is, not a lesion outline; a high pointing-game score is not a diagnosis.</li><li>The official TBX11K test labels are hidden; our test set is its labelled validation set, so numbers are not directly comparable to the leaderboard.</li></ul></div>
+    <div class="card"><b>Test it yourself (3 commands)</b>
+<pre>git clone https://github.com/zyna-b/lunglens
+cd lunglens &amp;&amp; pip install -r requirements.txt
+python evaluate.py          # 12 bundled X-rays
+python predict.py samples/tb_1.png --heatmaps out/</pre>
+      <p class="meta">Full test set: <code>python evaluate.py --data /path/to/tbx11k</code>. Weights: <code>weights/lunglens.onnx</code> (ONNX), <code>weights/lunglens_torchscript.pt</code> (TorchScript), <code>weights/&lt;model&gt;.pt</code> (PyTorch checkpoints).</p></div>
+  </div>
+</div></section>
+
+<section id="links"><div class="wrap">
+  <h2>Everything, linked</h2>
+  <p class="sub">For the grader and anyone else: every artefact of the project in one place. A machine-readable copy is at <a href="project.json">/project.json</a>, and a plain-text guide for AI crawlers at <a href="llms.txt">/llms.txt</a>.</p>
+  <div class="links"><a href="https://github.com/zyna-b/lunglens"><b>GitHub repository</b><span>https://github.com/zyna-b/lunglens · code, weights, splits, notebook</span></a><a href="https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified"><b>Dataset (TBX11K, Kaggle)</b><span>https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified · CC BY 4.0</span></a><a href="https://github.com/zyna-b/lunglens/raw/main/weights/lunglens.onnx"><b>Model weights (ONNX)</b><span>https://github.com/zyna-b/lunglens/raw/main/weights/lunglens.onnx · weights/lunglens.onnx</span></a><a href="https://github.com/zyna-b/lunglens/raw/main/weights/lunglens_torchscript.pt"><b>Model weights (TorchScript)</b><span>https://github.com/zyna-b/lunglens/raw/main/weights/lunglens_torchscript.pt · weights/lunglens_torchscript.pt</span></a><a href="https://github.com/zyna-b/lunglens/tree/main/weights"><b>PyTorch checkpoints</b><span>https://github.com/zyna-b/lunglens/tree/main/weights · weights/*.pt, all three models</span></a><a href="https://github.com/zyna-b/lunglens/blob/main/notebooks/LungLens_train.ipynb"><b>Training notebook</b><span>https://github.com/zyna-b/lunglens/blob/main/notebooks/LungLens_train.ipynb · Colab, all outputs</span></a><a href="https://lunglens-tb.vercel.app/report.pdf"><b>Report (PDF)</b><span>https://lunglens-tb.vercel.app/report.pdf · full write-up</span></a><a href="https://lunglens-tb.vercel.app/slides.pdf"><b>Presentation slides</b><span>https://lunglens-tb.vercel.app/slides.pdf · PDF</span></a><a href="" class=pending aria-disabled=true><b>Video presentation (YouTube)</b><span>coming soon · slides with voiceover</span></a><a href="" class=pending aria-disabled=true><b>LinkedIn post</b><span>coming soon · project announcement</span></a><a href="model_card.json"><b>Model card (JSON)</b><span>model_card.json · inputs, outputs, threshold, metrics</span></a><a href="https://lunglens-tb.vercel.app"><b>This website</b><span>https://lunglens-tb.vercel.app · Vercel</span></a></div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  LungLens by Zainab Hamid, Deep Learning (BSCS-7A), Superior University, Lahore · instructor Dr. Munir Ahmad · November 2026.<br>
+  Dataset: TBX11K (Liu et al., CVPR 2020), CC BY 4.0. Chest X-ray pretraining: TorchXRayVision (Cohen et al. 2022). Research demo, not a medical device.
+</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
