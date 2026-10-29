@@ -10,6 +10,10 @@ import html
 import json
 import os
 import shutil
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import site_visuals  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 os.chdir(ROOT)
@@ -48,7 +52,8 @@ with open("samples/labels.csv") as f:
     import csv
     samples = [{"file": r["file"], "class": r["class"], "boxes": json.loads(r["tb_boxes_xyxy_512px"]) if r["tb_boxes_xyxy_512px"] else []} for r in csv.DictReader(f)]
 json.dump(samples, open(f"{out}/samples/samples.json", "w"))
-open(f"{out}/favicon.svg", "w").write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0b7a83"/><path d="M16 6v20M16 12c-3 0-8 1-8 8 0 3 2 5 4 5s4-2 4-6M16 12c3 0 8 1 8 8 0 3-2 5-4 5s-4-2-4-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>')
+open(f"{out}/favicon.svg", "w").write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#06080c"/><path d="M16 5v22M16 11c-3.2 0-8.5 1.2-8.5 8.2 0 3.2 2 5.3 4.2 5.3S16 22.4 16 18.3M16 11c3.2 0 8.5 1.2 8.5 8.2 0 3.2-2 5.3-4.2 5.3S16 22.4 16 18.3" stroke="#edf1f7" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="18.5" r="2" fill="#ff6b35"/></svg>')
+visuals = site_visuals.build(out, runs, best)
 
 rows = []
 for m, r in runs.items():
@@ -117,7 +122,7 @@ fill = {
     "POINT": pct(b["pointing_game"]["hit_rate"], 0), "POINT_RANDOM": pct(b["pointing_game"]["random_hit_rate"], 0),
     "RESULTS_ROWS": "\n    ".join(rows), "RESULTS_SENTENCE": sentence, "LINK_CARDS": "".join(cards),
     "LIMITS": "".join(f"<li>{l}</li>" for l in limits), "JSONLD": json.dumps(jsonld),
-}
+} | visuals
 page = open("site/index.html").read()
 for k, v in fill.items():
     page = page.replace("{{" + k + "}}", str(v))

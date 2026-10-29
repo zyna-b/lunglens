@@ -5,173 +5,245 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LungLens: TB screening from chest X-rays</title>
 <meta name="description" content="LungLens screens chest X-rays for tuberculosis in the browser: healthy, sick but not TB, or TB, with a heatmap of where the model looked. Deep learning semester project, TBX11K dataset.">
+<meta name="theme-color" content="#06080c">
 <meta property="og:title" content="LungLens: TB screening from chest X-rays">
 <meta property="og:description" content="Upload a chest X-ray; a DenseNet-121 running in your browser flags possible TB and shows where it looked.">
 <meta property="og:image" content="figures/heatmaps_vs_boxes.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/json" href="project.json" title="Machine-readable project summary">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.add("js")</script>
 <script type="application/ld+json">{{JSONLD}}</script>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="#"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0b7a83"/><path d="M16 6v20M16 12c-3 0-8 1-8 8 0 3 2 5 4 5s4-2 4-6M16 12c3 0 8 1 8 8 0 3-2 5-4 5s-4-2-4-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>LungLens</a>
-  <nav><a href="#demo">Demo</a><a href="#problem">Problem</a><a href="#dataset">Dataset</a><a href="#model">Model</a><a href="#results">Results</a><a href="#links">Links</a></nav>
+  <a class="brand" href="#"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5v22M16 11c-3.2 0-8.5 1.2-8.5 8.2 0 3.2 2 5.3 4.2 5.3S16 22.4 16 18.3M16 11c3.2 0 8.5 1.2 8.5 8.2 0 3.2-2 5.3-4.2 5.3S16 22.4 16 18.3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="12" cy="18.5" r="1.6" fill="#ff6b35"/></svg>LungLens</a>
+  <nav aria-label="Sections"><a href="#demo">Demo</a><a href="#problem">Context</a><a href="#dataset">Data</a><a href="#model">Models</a><a href="#results">Findings</a><a href="#links">Links</a></nav>
+  <span class="chip" aria-hidden="true"><i></i><span id="model-chip">model loading</span></span>
 </div></header>
 
 <main>
-<div class="wrap hero">
-  <div class="pills"><span class="pill">Deep Learning semester project</span><span class="pill">TBX11K · 8,399 X-rays</span><span class="pill">Runs in your browser</span></div>
-  <h1>Screen a chest X-ray for TB in about a second.</h1>
-  <p class="lead">LungLens sorts a chest X-ray into <b>healthy</b>, <b>sick but not TB</b>, or <b>TB</b>, and shows where in the lungs it looked. The model runs on your device, so the X-ray is never uploaded anywhere.</p>
-  <a class="btn primary" href="#demo" id="try-sample">Try a sample X-ray</a>
-  <a class="btn" href="{{GITHUB}}">Code &amp; weights on GitHub</a>
-</div>
-
-<section id="demo"><div class="wrap">
-  <h2>Try it</h2>
-  <p class="sub">Upload a frontal chest X-ray (PNG or JPG), or tap one of the 12 test X-rays below. Each sample shows its true label; the green boxes on TB samples were drawn by doctors.</p>
-  <div class="demo">
-    <div class="card">
-      <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload a chest X-ray">
-        <b>Drop an X-ray here</b> or click to choose a file
-        <input type="file" id="file" accept="image/*" hidden>
-      </div>
-      <div class="viewer" aria-live="polite">
-        <div class="empty" id="empty">No X-ray yet</div>
-        <canvas id="xray"></canvas><canvas id="heat"></canvas><canvas id="boxes"></canvas>
-      </div>
-      <div class="toggles">
-        <label><input type="checkbox" id="show-heat" checked> TB heatmap</label>
-        <label>opacity <input type="range" id="opacity" min="0" max="0.9" step="0.05" value="0.45"></label>
-        <label id="box-toggle" hidden><input type="checkbox" id="show-boxes" checked> doctors' TB boxes</label>
-      </div>
-      <div class="model-switch" id="model-switch" hidden role="group" aria-label="Choose model">
-        <span>Model:</span><button type="button" id="m-main" data-which="main" aria-pressed="true"></button><button type="button" id="m-alt" data-which="alt" aria-pressed="false"></button>
-        <small>Same network, different starting weights. Compare where each one looks.</small>
-      </div>
-      <div class="gallery" id="gallery" aria-label="Sample X-rays from the test set"></div>
+<section class="hero"><div class="wrap hero-grid">
+  <div class="hero-copy">
+    <h1>Every chest <span class="nw">X-ray</span> deserves a <em>second look.</em></h1>
+    <p class="lead">LungLens screens a chest X-ray for tuberculosis in about a second, sorting it into <b>healthy</b>, <b>sick but not TB</b> or <b>TB</b>, and lights up where in the lungs it found the evidence. The model runs in your browser, so the X-ray is never uploaded anywhere.</p>
+    <div class="cta">
+      <a class="btn primary" href="#demo" id="try-sample">Try it on a test X-ray <span aria-hidden="true">→</span></a>
+      <a class="btn ghost" href="{{GITHUB}}">Code &amp; weights on GitHub <span aria-hidden="true">↗</span></a>
     </div>
-    <div class="card" aria-live="polite">
-      <div class="verdict idle" id="verdict">Waiting for an X-ray<small>Upload one, or tap a sample.</small></div>
-      <p class="meta" id="status" aria-live="polite">Loading…</p>
-      <div id="bars"></div>
-      <p class="meta" id="truth"></p>
-      <p class="meta">Model: <span id="which">{{DEPLOYED_NICE}}</span> · state: <span id="run-state">loading</span> · screening threshold {{THRESHOLD_PCT}} for the deployed model (95% specificity on validation X-rays).</p>
-      <p class="notice">Research and teaching demo, not a medical device. A flagged X-ray needs a lab test; a clear one does not rule TB out. Not for children under 15.</p>
+    <p class="byline">Deep Learning semester project · {{AUTHOR}} · Superior University, Lahore</p>
+  </div>
+  <figure class="plate hero-plate">
+    <div class="frame">
+      <img src="{{HERO_IMG}}" alt="Chest X-ray with tuberculosis from the TBX11K test set" width="512" height="512">
+      <img class="heat-layer" src="hero/heat.png" alt="" aria-hidden="true" width="512" height="512">
+      <div class="mark-box" style="{{HERO_BOX}}"><span>radiologist</span></div>
+      <div class="mark-peak" style="{{HERO_PEAK}}"><span>model's hottest point</span></div>
+      <div class="scan" aria-hidden="true"></div>
+      <span class="r-marker" aria-hidden="true">R</span>
+    </div>
+    <figcaption><span>TBX11K test X-ray · {{HERO_FILE}}</span><span>true label: TB</span><span class="ember">LungLens: refer for a lab test</span></figcaption>
+  </figure>
+  <dl class="spec">
+    <div><dt>3-class accuracy</dt><dd>{{ACC}}</dd></div>
+    <div><dt>TB X-rays caught</dt><dd>{{TP}}<small>/{{N_TB}}</small></dd></div>
+    <div><dt>TB vs not-TB AUC</dt><dd>{{TB_AUC}}</dd></div>
+    <div><dt>Where it runs</dt><dd>your device</dd></div>
+  </dl>
+</div></section>
+
+<section id="demo" class="sec"><div class="wrap sec-grid">
+  <div class="rail"><span>Reading room</span></div>
+  <div class="body">
+    <h2 class="reveal">Try it on a <em>real</em> <span class="nw">X-ray.</span></h2>
+    <p class="sub reveal">Upload a frontal chest X-ray (PNG or JPG), or tap one of the 12 test X-rays below. Each sample shows its true label; the dashed boxes on TB samples were drawn by doctors.</p>
+    <div class="demo">
+      <div class="viewer-col">
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload a chest X-ray">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><b>Drop an X-ray here</b> or click to choose a file</span><small>stays on this device</small>
+          <input type="file" id="file" accept="image/*" hidden>
+        </div>
+        <div class="plate">
+          <div class="frame viewer" aria-live="polite">
+            <div class="empty" id="empty"><span>No X-ray on the lightbox yet</span><small>tap a sample below</small></div>
+            <canvas id="xray"></canvas><canvas id="heat"></canvas><canvas id="boxes"></canvas>
+            <div class="scan" aria-hidden="true"></div>
+            <span class="r-marker" aria-hidden="true">R</span>
+          </div>
+        </div>
+        <div class="toggles">
+          <label class="sw"><input type="checkbox" id="show-heat" checked><span>TB heatmap</span></label>
+          <label class="range">opacity <input type="range" id="opacity" min="0" max="1" step="0.05" value="0.9"></label>
+          <label class="sw" id="box-toggle" hidden><input type="checkbox" id="show-boxes" checked><span>doctors' TB boxes</span></label>
+        </div>
+        <div class="model-switch" id="model-switch" hidden role="group" aria-label="Choose model">
+          <span class="lbl">Model</span><div class="seg"><button type="button" id="m-main" data-which="main" aria-pressed="true"></button><button type="button" id="m-alt" data-which="alt" aria-pressed="false"></button></div>
+          <small>Same network, different starting weights. Compare where each one looks.</small>
+        </div>
+        <div class="gallery" id="gallery" aria-label="Sample X-rays from the test set"></div>
+      </div>
+      <div class="sheet" aria-live="polite">
+        <div class="sheet-head"><span>LungLens · screening report</span><span>{{DEPLOYED_NICE}}</span></div>
+        <p class="k">Impression</p>
+        <div class="verdict idle" id="verdict">Waiting for an X-ray<small>Upload one, or tap a sample.</small></div>
+        <p class="meta" id="status" aria-live="polite">Loading…</p>
+        <p class="k">Probabilities</p>
+        <div id="bars"></div>
+        <p class="meta" id="truth"></p>
+        <p class="meta">Model: <span id="which">{{DEPLOYED_NICE}}</span> · state: <span id="run-state">loading</span> · screening threshold {{THRESHOLD_PCT}} for the deployed model (95% specificity on validation X-rays).</p>
+        <p class="notice">Research and teaching demo, not a medical device. A flagged X-ray needs a lab test; a clear one does not rule TB out. Not for children under 15.</p>
+      </div>
     </div>
   </div>
 </div></section>
 
-<section id="problem"><div class="wrap">
-  <h2>The problem</h2>
-  <p class="sub">Pakistan has one of the world's largest TB burdens, and many cases are never diagnosed. Chest X-rays are cheap and available almost everywhere; people trained to read them for TB are not.</p>
-  <div class="stats">
-    <div class="card stat"><div class="num">~670,000</div><div class="lbl">TB cases in Pakistan in 2024 (WHO Global TB Report 2025)</div></div>
-    <div class="card stat"><div class="num">5th</div><div class="lbl">highest TB burden in the world: 6.3% of all cases</div></div>
-    <div class="card stat"><div class="num">2021</div><div class="lbl">WHO first recommended computer-aided detection (CAD) software in place of a human reader for TB screening, age 15+</div></div>
-    <div class="card stat"><div class="num">3 classes</div><div class="lbl">because the hard part is telling TB from <i>other</i> lung disease, not from a healthy chest</div></div>
-  </div>
-  <div class="two" style="margin-top:20px">
-    <div class="card"><b>What LungLens does</b>
-      <ul class="clean">
-        <li>X-ray in → probabilities for healthy, sick-but-not-TB and TB, plus a heatmap.</li>
-        <li>Screening rule: <b>refer for a lab test if TB probability ≥ {{THRESHOLD_PCT}}</b>. The threshold is fixed on validation data at 95% specificity; on the test set that catches {{SENS}} of TB cases, above WHO's 90% minimum for a triage test.</li>
-        <li>Runs entirely in the browser (ONNX Runtime Web): works offline once loaded, costs nothing to serve, uploads nothing.</li>
-      </ul></div>
-    <div class="card"><b>Why it is not a toy</b>
-      <ul class="clean">
-        <li>Most student TB projects use a dataset where TB and normal X-rays come from different hospitals, so a model can learn "which hospital" instead of "which disease".</li>
-        <li>TBX11K's classes share sources, and its "sick but not TB" class forces the model to separate TB from pneumonia-like disease.</li>
-        <li>We test where the model looks against boxes doctors drew around TB: the <b>pointing game</b>.</li>
-      </ul></div>
-  </div>
-</div></section>
-
-<section id="dataset"><div class="wrap">
-  <h2>Dataset: TBX11K</h2>
-  <p class="sub">Liu et al., <i>Rethinking Computer-aided Tuberculosis Diagnosis</i>, CVPR 2020. Simplified Kaggle release, licence CC BY 4.0. 512×512 chest X-rays with TB areas boxed by radiologists.</p>
-  <div class="two">
-    <div class="card table-wrap"><table>
-      <tr><th>Split</th><th>Healthy</th><th>Sick, not TB</th><th>TB</th><th>Total</th></tr>
-      <tr><td>Train (90% of TBX11K train)</td><td>2,700</td><td>2,700</td><td>539</td><td>5,939</td></tr>
-      <tr><td>Validation (10%, stratified, seed 42)</td><td>300</td><td>300</td><td>60</td><td>660</td></tr>
-      <tr><td><b>Test</b> (TBX11K's labelled validation set)</td><td>800</td><td>800</td><td>200</td><td><b>1,800</b></td></tr>
-    </table>
-    <p class="meta">TBX11K's own test-set labels are not public, so its labelled validation set is our untouched test set. Exact file lists: <a href="{{GITHUB}}/blob/main/data/splits.csv">data/splits.csv</a>.</p></div>
-    <div class="card"><b>Handling the data</b>
-      <ul class="clean">
-        <li>Grayscale, resized to 384×384 (TB lesions are small; 224 px loses them).</li>
-        <li>TB is 9% of the training set: the loss weights TB about 5× more.</li>
-        <li>Augmentation on the GPU: small rotations, shifts, zooms, exposure/contrast/gamma changes, noise, blur.</li>
-        <li><b>No horizontal flips</b>: a flipped X-ray puts the heart on the wrong side, which never happens in real life.</li>
-      </ul>
-      <p><a class="btn" href="https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified">Dataset on Kaggle</a></p></div>
+<section id="problem" class="sec"><div class="wrap sec-grid">
+  <div class="rail"><span>Indication</span></div>
+  <div class="body">
+    <h2 class="reveal">The problem</h2>
+    <p class="statement reveal">Pakistan had about <em>670,000</em> TB cases in 2024, the fifth-highest burden in the world. Chest X-rays are cheap and available almost everywhere; people trained to read them for TB are not.</p>
+    <div class="facts reveal">
+      <div><b>~670,000</b><span>TB cases in Pakistan in 2024 (WHO Global TB Report 2025)</span></div>
+      <div><b>5th</b><span>highest TB burden in the world: 6.3% of all cases</span></div>
+      <div><b>2021</b><span>WHO first recommended computer-aided detection (CAD) software in place of a human reader for TB screening, age 15+</span></div>
+      <div><b>3 classes</b><span>because the hard part is telling TB from <i>other</i> lung disease, not from a healthy chest</span></div>
+    </div>
+    <div class="cols reveal">
+      <div><h3>What LungLens does</h3>
+        <ul class="clean">
+          <li>X-ray in → probabilities for healthy, sick-but-not-TB and TB, plus a heatmap.</li>
+          <li>Screening rule: <b>refer for a lab test if TB probability ≥ {{THRESHOLD_PCT}}</b>. The threshold is fixed on validation data at 95% specificity; on the test set that catches {{SENS}} of TB cases, above WHO's 90% minimum for a triage test.</li>
+          <li>Runs entirely in the browser (ONNX Runtime Web): works offline once loaded, costs nothing to serve, uploads nothing.</li>
+        </ul></div>
+      <div><h3>Why it is not a toy</h3>
+        <ul class="clean">
+          <li>Most student TB projects use a dataset where TB and normal X-rays come from different hospitals, so a model can learn "which hospital" instead of "which disease".</li>
+          <li>TBX11K's classes share sources, and its "sick but not TB" class forces the model to separate TB from pneumonia-like disease.</li>
+          <li>We test where the model looks against boxes doctors drew around TB: the <b>pointing game</b>.</li>
+        </ul></div>
+    </div>
   </div>
 </div></section>
 
-<section id="model"><div class="wrap">
-  <h2>Models: one question at a time</h2>
-  <p class="sub">Three models, trained with identical data, augmentation, loss and schedule. The two DenseNets differ <i>only</i> in their starting weights, which isolates one question: does it help to start from a network that has already seen chest X-rays?</p>
-  <div class="card table-wrap"><table>
-    <tr><th>Model</th><th>Start</th><th>Why it is here</th></tr>
-    <tr><td>CNN from scratch</td><td>random weights</td><td>Baseline: 5 conv blocks (2.4M params). What deep learning does with no prior knowledge.</td></tr>
-    <tr><td>DenseNet-121</td><td>ImageNet (photos of objects)</td><td>Standard transfer learning; same architecture as Stanford's CheXNet.</td></tr>
-    <tr><td>DenseNet-121</td><td>chest X-rays from 7 public datasets: NIH, CheXpert, MIMIC-CXR, PadChest and more (TorchXRayVision)</td><td>Domain-specific pretraining: has it learned what lungs look like?</td></tr>
-  </table></div>
-  <div class="two" style="margin-top:20px">
-    <div class="card"><b>Training</b>
-      <ul class="clean"><li>AdamW, weight decay 0.05, cosine schedule with warm-up; 20 epochs (DenseNets), 40 (scratch).</li>
-      <li>Batch 32, mixed precision, one NVIDIA L4 GPU on Google Colab.</li>
-      <li>Best epoch chosen by validation balanced accuracy; test set never used for any choice.</li></ul></div>
-    <div class="card"><b>Heatmaps without gradients</b>
-      <ul class="clean"><li>Every model ends in global average pooling + one linear layer, so the class activation map (CAM, Zhou et al. 2016) comes out of the same forward pass.</li>
-      <li>That is why the browser can draw the heatmap: the ONNX model returns probabilities <i>and</i> maps.</li></ul></div>
+<section id="dataset" class="sec"><div class="wrap sec-grid">
+  <div class="rail"><span>Technique · data</span></div>
+  <div class="body">
+    <h2 class="reveal">Dataset: TBX11K</h2>
+    <p class="sub reveal">Liu et al., <i>Rethinking Computer-aided Tuberculosis Diagnosis</i>, CVPR 2020. Simplified Kaggle release, licence CC BY 4.0. 512×512 chest X-rays with TB areas boxed by radiologists.</p>
+    <div class="cols wide-left reveal">
+      <div>
+        <div class="mixes">{{SPLIT_BARS}}</div>
+        <div class="table-wrap"><table>
+          <tr><th>Split</th><th>Healthy</th><th>Sick, not TB</th><th>TB</th><th>Total</th></tr>
+          <tr><td>Train (90% of TBX11K train)</td><td>2,700</td><td>2,700</td><td>539</td><td>5,939</td></tr>
+          <tr><td>Validation (10%, stratified, seed 42)</td><td>300</td><td>300</td><td>60</td><td>660</td></tr>
+          <tr><td><b>Test</b> (TBX11K's labelled validation set)</td><td>800</td><td>800</td><td>200</td><td><b>1,800</b></td></tr>
+        </table></div>
+        <p class="meta">TBX11K's own test-set labels are not public, so its labelled validation set is our untouched test set. Exact file lists: <a href="{{GITHUB}}/blob/main/data/splits.csv">data/splits.csv</a>.</p>
+      </div>
+      <div><h3>Handling the data</h3>
+        <ul class="clean">
+          <li>Grayscale, resized to 384×384 (TB lesions are small; 224 px loses them).</li>
+          <li>TB is 9% of the training set: the loss weights TB about 5× more.</li>
+          <li>Augmentation on the GPU: small rotations, shifts, zooms, exposure/contrast/gamma changes, noise, blur.</li>
+          <li><b>No horizontal flips</b>: a flipped X-ray puts the heart on the wrong side, which never happens in real life.</li>
+        </ul>
+        <p><a class="btn ghost" href="https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified">Dataset on Kaggle <span aria-hidden="true">↗</span></a></p></div>
+    </div>
   </div>
 </div></section>
 
-<section id="results"><div class="wrap">
-  <h2>Results on 1,800 test X-rays</h2>
-  <p class="sub">{{RESULTS_SENTENCE}}</p>
-  <div class="stats">
-    <div class="card stat"><div class="num">{{ACC}}</div><div class="lbl">3-class accuracy (95% CI {{ACC_CI}})</div></div>
-    <div class="card stat"><div class="num">{{TB_AUC}}</div><div class="lbl">TB vs not-TB AUC (95% CI {{AUC_CI}})</div></div>
-    <div class="card stat"><div class="num">{{SENS}}</div><div class="lbl">TB sensitivity at the screening threshold ({{SPEC}} specificity)</div></div>
-    <div class="card stat"><div class="num">{{POINT}}</div><div class="lbl">of TB X-rays: the heatmap's hottest point is inside a doctor's box (a random point: {{POINT_RANDOM}})</div></div>
+<section id="model" class="sec"><div class="wrap sec-grid">
+  <div class="rail"><span>Technique · models</span></div>
+  <div class="body">
+    <h2 class="reveal">Models: one question at a <em>time.</em></h2>
+    <p class="sub reveal">Three models, trained with identical data, augmentation, loss and schedule. The two DenseNets differ <i>only</i> in their starting weights, which isolates one question: does it help to start from a network that has already seen chest X-rays?</p>
+    <div class="models reveal" role="table" aria-label="The three models">
+      <div class="model" role="row"><span class="idx" aria-hidden="true">A</span><h3 role="cell">CNN from scratch</h3><p class="start" role="cell">random weights</p><p role="cell">Baseline: 5 conv blocks (2.4M params). What deep learning does with no prior knowledge.</p></div>
+      <div class="model" role="row"><span class="idx" aria-hidden="true">B</span><h3 role="cell">DenseNet-121</h3><p class="start" role="cell">ImageNet (photos of objects)</p><p role="cell">Standard transfer learning; same architecture as Stanford's CheXNet. <b class="ember">Deployed.</b></p></div>
+      <div class="model" role="row"><span class="idx" aria-hidden="true">C</span><h3 role="cell">DenseNet-121</h3><p class="start" role="cell">chest X-rays from 7 public datasets: NIH, CheXpert, MIMIC-CXR, PadChest and more (TorchXRayVision)</p><p role="cell">Domain-specific pretraining: has it learned what lungs look like?</p></div>
+    </div>
+    <div class="cols reveal">
+      <div><h3>Training</h3>
+        <ul class="clean"><li>AdamW, weight decay 0.05, cosine schedule with warm-up; 20 epochs (DenseNets), 40 (scratch).</li>
+        <li>Batch 32, mixed precision, one NVIDIA L4 GPU on Google Colab.</li>
+        <li>Best epoch chosen by validation balanced accuracy; test set never used for any choice.</li></ul></div>
+      <div><h3>Heatmaps without gradients</h3>
+        <ul class="clean"><li>Every model ends in global average pooling + one linear layer, so the class activation map (CAM, Zhou et al. 2016) comes out of the same forward pass.</li>
+        <li>That is why the browser can draw the heatmap: the ONNX model returns probabilities <i>and</i> maps.</li></ul></div>
+    </div>
   </div>
-  <div class="card table-wrap" style="margin-top:20px"><table>
-    <tr><th>Model</th><th>Params</th><th>Accuracy</th><th>Balanced acc.</th><th>TB AUC</th><th>Sensitivity</th><th>Specificity</th><th>Pointing game</th><th>CPU ms</th></tr>
-    {{RESULTS_ROWS}}
-  </table></div>
-  <div class="figs" style="margin-top:20px">
-    <figure class="wide"><img src="figures/heatmaps_vs_boxes.png" alt="Heatmaps of the deployed model on TB test X-rays, with doctors' TB boxes in green" loading="lazy"><figcaption>Where the deployed model looked (heatmap) vs where doctors marked TB (green boxes), on test X-rays it called TB.</figcaption></figure>
-    <figure><img src="figures/roc_tb.png" alt="ROC curves for TB vs not-TB, three models" loading="lazy"><figcaption>TB vs not-TB ROC; dots are the operating points at each model's screening threshold.</figcaption></figure>
-    <figure><img src="figures/confusion_matrix.png" alt="Confusion matrix of the deployed model" loading="lazy"><figcaption>Confusion matrix, deployed model, 1,800 test X-rays.</figcaption></figure>
-    <figure><img src="figures/pointing_game.png" alt="Pointing game hit rate by model" loading="lazy"><figcaption>Pointing game: does the heatmap's hottest point land in a doctor's TB box?</figcaption></figure>
-    <figure><img src="figures/training_curves.png" alt="Training loss and validation balanced accuracy by epoch" loading="lazy"><figcaption>Training loss and validation balanced accuracy per epoch.</figcaption></figure>
+</div></section>
+
+<section id="results" class="sec"><div class="wrap sec-grid">
+  <div class="rail"><span>Findings</span></div>
+  <div class="body">
+    <h2 class="reveal">Results on 1,800 test <span class="nw">X-rays</span></h2>
+    <p class="sub reveal">{{RESULTS_SENTENCE}}</p>
+    <div class="units reveal">
+      <div class="unit"><p class="big">{{TP}} <small>of {{N_TB}}</small></p><p>TB X-rays flagged for a lab test. One dot per <span class="nw">X-ray.</span></p>{{DOTS_TB}}</div>
+      <div class="unit"><p class="big">{{FP}} <small>of {{N_NEG}}</small></p><p>X-rays without TB referred anyway: the price of missing none.</p>{{DOTS_NEG}}</div>
+    </div>
+    <dl class="readout reveal">
+      <div><dt>3-class accuracy</dt><dd>{{ACC}}</dd><span>95% CI {{ACC_CI}}</span></div>
+      <div><dt>TB vs not-TB AUC</dt><dd>{{TB_AUC}}</dd><span>95% CI {{AUC_CI}}</span></div>
+      <div><dt>TB sensitivity at the screening threshold</dt><dd>{{SENS}}</dd><span>{{SPEC}} specificity</span></div>
+      <div><dt>of TB X-rays: the heatmap's hottest point is inside a doctor's box</dt><dd>{{POINT}}</dd><span>a random point: {{POINT_RANDOM}}</span></div>
+    </dl>
+    <div class="charts reveal">
+      <figure class="chart roc-fig"><figcaption><b>TB vs not-TB ROC</b><span>zoomed on the top-left corner; rings are each model's screening threshold</span></figcaption>{{ROC_SVG}}</figure>
+      <div class="chart-stack">
+        <figure class="chart"><figcaption><b>Confusion matrix</b><span>deployed model, row-normalised</span></figcaption>{{CONFUSION}}</figure>
+        <figure class="chart"><figcaption><b>Pointing game</b><span>does the heatmap's hottest point land in a doctor's TB box?</span></figcaption>{{POINTING}}</figure>
+      </div>
+    </div>
+    <div class="table-wrap reveal"><table class="results">
+      <tr><th>Model</th><th>Params</th><th>Accuracy</th><th>Balanced acc.</th><th>TB AUC</th><th>Sensitivity</th><th>Specificity</th><th>Pointing game</th><th>CPU ms</th></tr>
+      {{RESULTS_ROWS}}
+    </table></div>
+    <figure class="print wide reveal"><img src="figures/heatmaps_vs_boxes.png" alt="Heatmaps of the deployed model on TB test X-rays, with doctors' TB boxes in green" loading="lazy" width="1800" height="732"><figcaption><b>Fig. 1</b> Where the deployed model looked (heatmap) vs where doctors marked TB (green boxes), on test X-rays it called TB.</figcaption></figure>
+    <div class="prints reveal">
+      <figure class="print"><a href="figures/roc_tb.png"><img src="figures/roc_tb.png" alt="ROC curves for TB vs not-TB, three models" loading="lazy" width="750" height="750"></a><figcaption><b>Fig. 2</b> TB vs not-TB ROC; dots are the operating points at each model's screening threshold.</figcaption></figure>
+      <figure class="print"><a href="figures/confusion_matrix.png"><img src="figures/confusion_matrix.png" alt="Confusion matrix of the deployed model" loading="lazy" width="750" height="645"></a><figcaption><b>Fig. 3</b> Confusion matrix, deployed model, 1,800 test X-rays.</figcaption></figure>
+      <figure class="print"><a href="figures/pointing_game.png"><img src="figures/pointing_game.png" alt="Pointing game hit rate by model" loading="lazy" width="900" height="510"></a><figcaption><b>Fig. 4</b> Pointing game: does the heatmap's hottest point land in a doctor's TB box?</figcaption></figure>
+      <figure class="print"><a href="figures/training_curves.png"><img src="figures/training_curves.png" alt="Training loss and validation balanced accuracy by epoch" loading="lazy" width="1650" height="600"></a><figcaption><b>Fig. 5</b> Training loss and validation balanced accuracy per epoch.</figcaption></figure>
+    </div>
   </div>
-  <div class="two" style="margin-top:20px">
-    <div class="card"><b>Honest limits</b>
-      <ul class="clean">{{LIMITS}}</ul></div>
-    <div class="card"><b>Test it yourself (3 commands)</b>
-<pre>git clone {{GITHUB}}
+</div></section>
+
+<section id="impression" class="sec"><div class="wrap sec-grid">
+  <div class="rail"><span>Impression</span></div>
+  <div class="body">
+    <h2 class="reveal">Honest limits, and how to <em>check us.</em></h2>
+    <div class="cols reveal">
+      <div><h3>Honest limits</h3><ul class="clean">{{LIMITS}}</ul></div>
+      <div><h3>Test it yourself (3 commands)</h3>
+<pre class="term"><span class="dots3" aria-hidden="true"><i></i><i></i><i></i></span>git clone {{GITHUB}}
 cd lunglens &amp;&amp; pip install -r requirements.txt
 python evaluate.py          # 12 bundled X-rays
 python predict.py samples/tb_1.png --heatmaps out/</pre>
-      <p class="meta">Full test set: <code>python evaluate.py --data /path/to/tbx11k</code>. Weights: <code>weights/lunglens.onnx</code> (ONNX), <code>weights/lunglens_torchscript.pt</code> (TorchScript), <code>weights/&lt;model&gt;.pt</code> (PyTorch checkpoints).</p></div>
+        <p class="meta">Full test set: <code>python evaluate.py --data /path/to/tbx11k</code>. Weights: <code>weights/lunglens.onnx</code> (ONNX), <code>weights/lunglens_torchscript.pt</code> (TorchScript), <code>weights/&lt;model&gt;.pt</code> (PyTorch checkpoints).</p></div>
+    </div>
   </div>
 </div></section>
 
-<section id="links"><div class="wrap">
-  <h2>Everything, linked</h2>
-  <p class="sub">For the grader and anyone else: every artefact of the project in one place. A machine-readable copy is at <a href="project.json">/project.json</a>, and a plain-text guide for AI crawlers at <a href="llms.txt">/llms.txt</a>.</p>
-  <div class="links">{{LINK_CARDS}}</div>
+<section id="links" class="sec"><div class="wrap sec-grid">
+  <div class="rail"><span>Everything, linked</span></div>
+  <div class="body">
+    <h2 class="reveal">Every artefact, one <em>click</em> away.</h2>
+    <p class="sub reveal">For the grader and anyone else: every artefact of the project in one place. A machine-readable copy is at <a href="project.json">/project.json</a>, and a plain-text guide for AI crawlers at <a href="llms.txt">/llms.txt</a>.</p>
+    <div class="links reveal">{{LINK_CARDS}}</div>
+  </div>
 </div></section>
 </main>
 
 <footer><div class="wrap">
-  LungLens by {{AUTHOR}}, Deep Learning (BSCS-7A), Superior University, Lahore · instructor Dr. Munir Ahmad · {{MONTH}}.<br>
-  Dataset: TBX11K (Liu et al., CVPR 2020), CC BY 4.0. Chest X-ray pretraining: TorchXRayVision (Cohen et al. 2022). Research demo, not a medical device.
+  <p class="wordmark" aria-hidden="true">LungLens</p>
+  <p>LungLens by {{AUTHOR}}, Deep Learning (BSCS-7A), Superior University, Lahore · instructor Dr. Munir Ahmad · {{MONTH}}.<br>
+  Dataset: TBX11K (Liu et al., CVPR 2020), CC BY 4.0. Chest X-ray pretraining: TorchXRayVision (Cohen et al. 2022). Research demo, not a medical device.</p>
 </div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>

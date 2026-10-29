@@ -24,15 +24,22 @@ async function init() {
     session = sessions.main = await ort.InferenceSession.create("model/lunglens.onnx", { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
     setupModelSwitch();
     setStatus("Model ready. Upload an X-ray or tap a sample.");
-    $("#run-state").textContent = "ready";
+    setRun("ready");
     if (pending) analyse(...pending);  // an X-ray picked while the model was loading
   } catch (e) {
     console.error(e);
     setStatus("Could not load the model in this browser: " + e.message);
+    setRun("unavailable");
   }
 }
 
 function setStatus(t) { $("#status").textContent = t; }
+function setRun(state) {
+  $("#run-state").textContent = state;
+  const chip = $("#model-chip");
+  if (chip) chip.textContent = state === "ready" ? "model ready · on device" : "model " + state;
+  document.documentElement.classList.toggle("ready", state === "ready");
+}
 
 function buildGallery() {
   const g = $("#gallery");
@@ -40,7 +47,8 @@ function buildGallery() {
     const b = document.createElement("button");
     b.type = "button";
     b.title = `Sample ${i + 1}: true label ${NAMES[s.class]}`;
-    b.innerHTML = `<img src="samples/${s.file}" alt="Sample chest X-ray, true label ${NAMES[s.class]}" loading="lazy"><span>${NAMES[s.class]}</span>`;
+    b.dataset.class = s.class;
+    b.innerHTML = `<img src="samples/${s.file}" alt="Sample chest X-ray, true label ${NAMES[s.class]}" loading="lazy"><span class="n">${String(i + 1).padStart(2, "0")}</span><span class="c">${NAMES[s.class]}</span>`;
     b.addEventListener("click", () => {
       document.querySelectorAll("#gallery button").forEach((x) => x.classList.remove("active"));
       b.classList.add("active");
@@ -104,6 +112,9 @@ async function analyse(img, meta) {
   $("#empty").hidden = true;
   const W = 768;
   [base, heat, boxes].forEach((c) => { c.width = c.height = W; });
+  const viewer = base.parentElement;
+  viewer.classList.remove("scanning"); void viewer.offsetWidth; viewer.classList.add("scanning");
+  setTimeout(() => viewer.classList.remove("scanning"), 1000);
   base.getContext("2d").drawImage(img, 0, 0, W, W);
   setStatus("Analysing…");
   const t0 = performance.now();
@@ -119,10 +130,13 @@ async function analyse(img, meta) {
   setStatus(`Done in ${Math.round(ms)} ms on this device. Nothing was uploaded.`);
 }
 
-function jet(v) {
-  const c = (x) => Math.max(0, Math.min(1, x));
-  return [c(1.5 - Math.abs(4 * v - 3)), c(1.5 - Math.abs(4 * v - 2)), c(1.5 - Math.abs(4 * v - 1))].map((x) => Math.round(x * 255));
+// inferno (matplotlib), 9 stops; only the strongest evidence is opaque, so the X-ray stays readable
+const INFERNO = [[0, 0, 4], [31, 12, 72], [85, 15, 109], [136, 34, 106], [186, 54, 85], [227, 89, 51], [249, 140, 10], [249, 201, 50], [252, 255, 164]];
+function inferno(v) {
+  const x = Math.max(0, Math.min(1, v)) * (INFERNO.length - 1), i = Math.min(INFERNO.length - 2, Math.floor(x)), f = x - i;
+  return INFERNO[i].map((c, k) => Math.round(c + (INFERNO[i + 1][k] - c) * f));
 }
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 function drawHeat() {
   const ctx = heat.getContext("2d");
@@ -134,16 +148,30 @@ function drawHeat() {
   small.width = small.height = side;
   const sctx = small.getContext("2d");
   const im = sctx.createImageData(side, side);
+  let peak = 0;
   camTB.forEach((v, i) => {
     const t = (v - lo) / (hi - lo + 1e-8);
-    const [r, g, b] = jet(t);
-    im.data.set([r, g, b, 255], 4 * i);
+    if (v === hi) peak = i;
+    const [r, g, b] = inferno(0.2 + 0.8 * t);
+    im.data.set([r, g, b, Math.round(242 * smooth(0.3, 0.95, t))], 4 * i);
   });
   sctx.putImageData(im, 0, 0);
   ctx.globalAlpha = Number($("#opacity").value);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
+  ctx.filter = `blur(${heat.width / 60}px)`;
   ctx.drawImage(small, 0, 0, heat.width, heat.height);
+  ctx.filter = "none";
+  // the model's hottest point, as on the home page
+  const k = heat.width / side, px = (peak % side + 0.5) * k, py = (Math.floor(peak / side) + 0.5) * k;
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = "#ff6b35";
+  ctx.lineWidth = 3;
+  ctx.shadowColor = "rgba(255,107,53,.9)";
+  ctx.shadowBlur = 16;
+  ctx.beginPath(); ctx.arc(px, py, 22, 0, 2 * Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px - 36, py); ctx.lineTo(px + 36, py); ctx.stroke();
+  ctx.shadowBlur = 0;
 }
 
 function drawBoxes() {
@@ -154,9 +182,19 @@ function drawBoxes() {
   $("#box-toggle").hidden = !has;
   if (!has || !$("#show-boxes").checked) return;
   const k = boxes.width / 512;
-  ctx.strokeStyle = "#39ff6a";
-  ctx.lineWidth = 4;
-  m.boxes.forEach(([x1, y1, x2, y2]) => ctx.strokeRect(x1 * k, y1 * k, (x2 - x1) * k, (y2 - y1) * k));
+  ctx.strokeStyle = "rgba(237,241,247,.92)";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([12, 8]);
+  ctx.font = "500 20px 'JetBrains Mono', monospace";
+  m.boxes.forEach(([x1, y1, x2, y2]) => {
+    ctx.strokeRect(x1 * k, y1 * k, (x2 - x1) * k, (y2 - y1) * k);
+    const w = ctx.measureText("RADIOLOGIST").width + 14;
+    ctx.fillStyle = "rgba(237,241,247,.92)";
+    ctx.fillRect(x1 * k - 1.5, y1 * k - 30, w, 28);
+    ctx.fillStyle = "#06080c";
+    ctx.fillText("RADIOLOGIST", x1 * k + 6, y1 * k - 9);
+  });
+  ctx.setLineDash([]);
 }
 
 function showResult(p, ms, meta) {
@@ -178,7 +216,7 @@ function showResult(p, ms, meta) {
   CLASSES.forEach((c, i) => {
     const mark = c === "tb" ? `<div class="mark" style="left:${thr * 100}%" title="screening threshold"></div>` : "";
     bars.insertAdjacentHTML("beforeend",
-      `<div class="bar ${c === "tb" ? "tb" : ""}"><div class="label"><span>${NAMES[c]}</span><b>${(p[i] * 100).toFixed(1)}%</b></div>
+      `<div class="bar ${c}"><div class="label"><span>${NAMES[c]}</span><b>${(p[i] * 100).toFixed(1)}%</b></div>
        <div class="track"><div class="fill" style="width:${p[i] * 100}%"></div>${mark}</div></div>`);
   });
   $("#which").textContent = which === "alt" ? card.alternative_model.architecture : card.architecture + " (deployed)";
@@ -200,4 +238,8 @@ $("#try-sample").addEventListener("click", () => {
   document.querySelector("#demo").scrollIntoView();
   (tb || document.querySelector("#gallery button")).click();
 });
+if ("IntersectionObserver" in window) {
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+} else document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
 init();
