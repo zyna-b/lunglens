@@ -5,7 +5,7 @@
 const SIZE = 384;
 const CLASSES = ["healthy", "sick_but_not_tb", "tb"];
 const NAMES = { healthy: "Healthy", sick_but_not_tb: "Sick, but not TB", tb: "TB" };
-let session = null, card = null, samples = [], current = null, lastImg = null, lastMeta = null;
+let session = null, card = null, samples = [], current = null, lastImg = null, lastMeta = null, pending = null;
 const sessions = {}; // "main" = deployed model, "alt" = the other DenseNet (loaded on demand)
 let which = "main";
 
@@ -25,6 +25,7 @@ async function init() {
     setupModelSwitch();
     setStatus("Model ready. Upload an X-ray or tap a sample.");
     $("#run-state").textContent = "ready";
+    if (pending) analyse(...pending);  // an X-ray picked while the model was loading
   } catch (e) {
     console.error(e);
     setStatus("Could not load the model in this browser: " + e.message);
@@ -98,7 +99,7 @@ function setupModelSwitch() {
 }
 
 async function analyse(img, meta) {
-  if (!session) return setStatus("The model is still loading…");
+  if (!session) { pending = [img, meta]; return setStatus("The model is still loading… this X-ray will be analysed as soon as it is ready."); }
   lastImg = img; lastMeta = meta;
   $("#empty").hidden = true;
   const W = 768;
