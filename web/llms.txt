@@ -7,8 +7,8 @@
 - Dataset: TBX11K, https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified (CC BY 4.0)
 - Report: https://lunglens-tb.vercel.app/report.pdf
 - Slides: https://lunglens-tb.vercel.app/slides.pdf
-- Video: see project.json
-- LinkedIn: see project.json
+- Video: https://www.youtube.com/watch?v=caT1J9Lhu4A
+- LinkedIn: https://www.linkedin.com/feed/update/urn:li:activity:7522041517444866048/
 - Machine-readable summary: /project.json ; model card: /model_card.json
 
 ## Model

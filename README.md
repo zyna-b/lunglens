@@ -5,7 +5,7 @@
 
 **Upload a chest X-ray → healthy / sick but not TB / TB, plus a heatmap of where the model looked. Runs in the browser; the X-ray never leaves your device.**
 
-[Live demo](https://lunglens-tb.vercel.app) · [Report (PDF)](https://lunglens-tb.vercel.app/report.pdf) · [Slides](https://lunglens-tb.vercel.app/slides.pdf) · Video (coming soon) · LinkedIn post (coming soon) · [Dataset (Kaggle)](https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified) · [Model card](model_card.json)
+[Live demo](https://lunglens-tb.vercel.app) · [Report (PDF)](https://lunglens-tb.vercel.app/report.pdf) · [Slides](https://lunglens-tb.vercel.app/slides.pdf) · [Video](https://www.youtube.com/watch?v=caT1J9Lhu4A) · [LinkedIn post](https://www.linkedin.com/feed/update/urn:li:activity:7522041517444866048/) · [Dataset (Kaggle)](https://www.kaggle.com/datasets/vbookshelf/tbx11k-simplified) · [Model card](model_card.json)
 
 Deep Learning semester project, BSCS-7A, Superior University, Lahore. Instructor: Dr. Munir Ahmad. Author: Zainab Hamid.
 

@@ -12,7 +12,7 @@ Results on 1,800 test X-rays it never saw: 99.2% accuracy, TB AUC 0.9996, 100.0%
 
 Try it: https://lunglens-tb.vercel.app
 Code, weights and data splits: https://github.com/zyna-b/lunglens
-Walkthrough video: [YouTube link]
+Walkthrough video: https://www.youtube.com/watch?v=caT1J9Lhu4A
 
 Thanks to Dr. Munir Ahmad, and to Liu et al. for the TBX11K dataset.
 It's a research demo, not a medical device.
