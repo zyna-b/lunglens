@@ -71,7 +71,7 @@ LINKS = [  # key in links.json, title, description
     ("notebook", "Training notebook", "Colab, all outputs"),
     ("report", "Report (PDF)", "full write-up"),
     ("slides", "Presentation slides", "PDF"),
-    ("youtube", "Video presentation (YouTube)", "slides with voiceover"),
+    ("youtube", "Video presentation (YouTube)", "project film with voiceover"),
     ("linkedin", "LinkedIn post", "project announcement"),
     ("model_card", "Model card (JSON)", "inputs, outputs, threshold, metrics"),
     ("site", "This website", "Vercel"),
